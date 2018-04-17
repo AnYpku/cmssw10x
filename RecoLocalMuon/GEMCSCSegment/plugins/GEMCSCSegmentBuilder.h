@@ -72,7 +72,12 @@ class GEMCSCSegmentBuilder {
  public:
   explicit GEMCSCSegmentBuilder(const edm::ParameterSet&);
   ~GEMCSCSegmentBuilder();
-  void build(const GEMRecHitCollection* rechits,const CSCSegmentCollection* cscsegments, GEMCSCSegmentCollection& oc); 
+
+//modified
+  void build1(const GEMRecHitCollection* rechits,const CSCSegmentCollection* cscsegments, GEMCSCSegmentCollection& oc1); 
+
+//added 
+  void build2(const GEMRecHitCollection* rechits,const CSCSegmentCollection* cscsegments, GEMCSCSegmentCollection& oc2); 
 
   void setGeometry(const GEMGeometry* gemgeom, const CSCGeometry* cscgeom); 
   void LinkGEMRollsToCSCChamberIndex(const GEMGeometry* gemgeom, const CSCGeometry* cscgeom);  
