@@ -101,7 +101,7 @@ void GEMCSCSegmentBuilder::LinkGEMRollsToCSCChamberIndex(const GEMGeometry* gemG
        					      <<"] has following GEM rolls: ["<<GEMRollsstr<<"]"<<std::endl;
     }
 }
-
+//#modify
 void GEMCSCSegmentBuilder::build(const GEMRecHitCollection* recHits, const CSCSegmentCollection* cscsegments, GEMCSCSegmentCollection& oc) 
 {
   	
@@ -125,6 +125,8 @@ void GEMCSCSegmentBuilder::build(const GEMRecHitCollection* recHits, const CSCSe
   // CSC Chamber can contain more than one segment --> therefore create map <detId, vector<CSCSegment> >
   std::map<uint32_t, std::vector<GEMRecHit*> >        gemRecHitCollection;
   std::map<uint32_t, std::vector<const CSCSegment*> > cscSegColl_GEM11;
+  //#add
+  std::map<uint32_t, std::vector<const CSCSegment*> > cscSegColl_GEM21;
   std::map<uint32_t, std::vector<const CSCSegment*> > cscSegColl_noGEM;
 
 
@@ -143,7 +145,7 @@ void GEMCSCSegmentBuilder::build(const GEMRecHitCollection* recHits, const CSCSe
       // Case A :: ME1/1 Segments can have GEM Rechits associated to them
       // ================================================================
       if(CSCId.station()==1 && (CSCId.ring()==1 || CSCId.ring()==4)) 
-	{
+	{//#the if condition between 148 and 233 
 	
 	  edm::LogVerbatim("GEMCSCSegmentBuilder")<<"[GEMCSCSegmentBuilder :: build] Found ME1/1 Segment in "<<CSCId.rawId()<<" = "<<CSCId<<std::endl;
 
@@ -153,9 +155,10 @@ void GEMCSCSegmentBuilder::build(const GEMRecHitCollection* recHits, const CSCSe
 	  // if no vector is associated yet to this CSCDetId, create empty vector
 	  // then add the segment to the vector
 	  // and assign the vector again to the CSCDetId
-	  std::vector<const CSCSegment* > cscsegmentvector = cscSegColl_GEM11[CSCId.rawId()];
-	  cscsegmentvector.push_back(segmIt->clone());
-	  cscSegColl_GEM11[CSCId.rawId()]=cscsegmentvector;
+      //#modify
+	  std::vector<const CSCSegment* > cscsegmentvector1 = cscSegColl_GEM11[CSCId.rawId()];
+	  cscsegmentvector1.push_back(segmIt->clone());
+	  cscSegColl_GEM11[CSCId.rawId()]=cscsegmentvector1;
 	  
 	  // 2) Make a vector of GEM DetIds associated to this CSC chamber of the segment
 	  // ----------------------------------------------------------------------------
@@ -229,14 +232,105 @@ void GEMCSCSegmentBuilder::build(const GEMRecHitCollection* recHits, const CSCSe
 		} // end Loop over GEM Rolls 
 	    } // end Loop over GEM RecHits
 	} // end requirement of CSC segment in ME1/1 
+//#add  ME2/1 + GE2/1
+      if(CSCId.station()==2 && CSCId.ring()==1) 
+	{//#the if condition between 235 and 321
+	
+	  edm::LogVerbatim("GEMCSCSegmentBuilder")<<"[GEMCSCSegmentBuilder :: build] Found ME2/1 Segment in "<<CSCId.rawId()<<" = "<<CSCId<<std::endl;
+
+	  // 1) Save the CSC Segment in CSC segment collection
+	  // -------------------------------------------------
+	  // get CSC segment vector associated to this CSCDetId
+	  // if no vector is associated yet to this CSCDetId, create empty vector
+	  // then add the segment to the vector
+	  // and assign the vector again to the CSCDetId
+      //#modify
+	  std::vector<const CSCSegment* > cscsegmentvector2 = cscSegColl_GEM21[CSCId.rawId()];
+	  cscsegmentvector2.push_back(segmIt->clone());
+	  cscSegColl_GEM21[CSCId.rawId()]=cscsegmentvector2;
+	  
+	  // 2) Make a vector of GEM DetIds associated to this CSC chamber of the segment
+	  // ----------------------------------------------------------------------------
+	  std::vector<GEMDetId> rollsForThisCSCvector;
+	  
+	  int cscRegion  = CSCId.endcap();
+	  int cscStation = CSCId.station();
+	  int cscChamber = CSCId.chamber();
+	  int gemRegion  = 1; if(cscRegion==2) gemRegion= -1; // CSC Endcaps are numbered 1,2; GEM Endcaps are numbered +1, -1
+	  int gemRing    = 1;                                 // this we can hardcode, only GEMs in Ring 1
+	  int gemStation = cscStation;
+	  
+	  int gem1stChamber = cscChamber;
+	  // Just adding also neighbouring chambers here is not enough to get the GEM-CSC segment looking at overlapping chambers
+	  // Need to disentangle the use of the CSC chamber and GEM roll in the GEMCSCSegFit class
+	  // For now just ignore the neighbouring chambers and keep code commented out ... at later point we will include it again
+	  // int gem2ndChamber = gem1stChamber+1; if(gem2ndChamber>36) gem2ndChamber-=36; // neighbouring GEM chamber X+1
+	  // int gem3rdChamber = gem1stChamber-1; if(gem2ndChamber<1)  gem2ndChamber+=36; // neighbouring GEM chamber X-1
+	  
+	  std::vector<CSCStationIndex> indexvector;       
+	  CSCStationIndex index11(gemRegion,gemStation,gemRing,gem1stChamber,1);  // GEM Chamber Layer 1       
+	  CSCStationIndex index12(gemRegion,gemStation,gemRing,gem1stChamber,2);  // GEM Chamber Layer 2
+	  indexvector.push_back(index11); indexvector.push_back(index12); 
+	  // for now not inserting neighbouring chambers and keep code commented out ... at later point we will include it again
+	  // CSCStationIndex index21(gemRegion,gemStation,gemRing,gem2ndChamber,1);         CSCStationIndex index22(gemRegion,gemStation,gemRing,gem2ndChamber,2); 
+	  // CSCStationIndex index31(gemRegion,gemStation,gemRing,gem3rdChamber,1);         CSCStationIndex index32(gemRegion,gemStation,gemRing,gem3rdChamber,2); 
+	  // indexvector.push_back(index21); indexvector.push_back(index22); 
+	  // indexvector.push_back(index31); indexvector.push_back(index32); 
+	  
+	  for(std::vector<CSCStationIndex>::iterator cscIndexIt=indexvector.begin(); cscIndexIt!=indexvector.end(); ++cscIndexIt) 
+	    {
+	      std::set<GEMDetId> rollsForThisCSC = rollstoreCSC[*cscIndexIt]; 
+	      for (std::set<GEMDetId>::iterator gemRollIt = rollsForThisCSC.begin(); gemRollIt != rollsForThisCSC.end(); ++gemRollIt)
+		{
+		  rollsForThisCSCvector.push_back(*gemRollIt);
+		}
+	    }
+
+      
+	  // 3) Loop over GEM Rechits
+	  // ------------------------
+	  edm::LogVerbatim("GEMCSCSegmentBuilder")<<"[GEMCSCSegmentBuilder :: build] Start Loop over GEM Rechits :: size = "<<recHits->size()
+						  <<" and number of Rolls for this CSC :: "<<rollsForThisCSCvector.size()<<std::endl;
+	  for(GEMRecHitCollection::const_iterator hitIt = recHits->begin(); hitIt != recHits->end(); ++hitIt) 
+	    {
+	      GEMDetId gemIdfromHit = hitIt->gemId();
+	      
+	      // Loop over GEM rolls being pointed by a CSC segment and look for a match
+	      for (std::vector<GEMDetId>::iterator gemRollIt = rollsForThisCSCvector.begin(); gemRollIt != rollsForThisCSCvector.end(); ++gemRollIt) 
+		{
+		
+		  GEMDetId gemIdfromCSC(*gemRollIt);
+		  if(gemIdfromHit == gemIdfromCSC.rawId()) 
+		    {
+		      // get GEM RecHit vector associated to this CSC DetId
+		      // if no vector is associated yet to this CSC DetId, create empty vector
+		      // then add the rechits to the vector
+		      // and assign the vector again to the CSC DetId  
+		      std::vector<GEMRecHit* > gemrechitvector = gemRecHitCollection[CSCId.rawId()];
+		      // check whether this hit was already filled in the gemrechit vector
+		      bool hitfound = false;
+		      for(std::vector<GEMRecHit*>::const_iterator it=gemrechitvector.begin(); it!=gemrechitvector.end(); ++it) 
+			{
+			  if(hitIt->gemId()==(*it)->gemId() && hitIt->localPosition()==(*it)->localPosition()) hitfound=true;
+			}
+		      if(!hitfound) gemrechitvector.push_back(hitIt->clone());
+		      gemRecHitCollection[CSCId.rawId()]=gemrechitvector;
+		      edm::LogVerbatim("GEMCSCSegmentBuilder")<<"[GEMCSCSegmentBuilder :: build] GEM Rechit in "<<hitIt->gemId()<< "["<<hitIt->gemId().rawId()
+							      <<"] added to CSC segment found in "<<CSCId<<" ["<<CSCId.rawId()<<"]"<<std::endl;	      
+		    }
+		} // end Loop over GEM Rolls 
+	    } // end Loop over GEM RecHits
+	} // end requirement of CSC segment in ME2/1 
+
 
 
       // Case B :: all other CSC Chambers have no GEM Chamber associated
       // ===============================================================
-      else if(!(CSCId.station()==1 && (CSCId.ring()==1 || CSCId.ring()==4))) 
+      //#modify
+      else if(!(CSCId.station()==1 && (CSCId.ring()==1 || CSCId.ring()==4)) && !(CSCId.station()==2 && CSCId.ring()==1) ) 
 	{
-
-	  edm::LogVerbatim("GEMCSCSegmentBuilder")<<"[GEMCSCSegmentBuilder :: build] Found non-ME1/1 Segment in "<<CSCId.rawId()<<" = "<<CSCId<<std::endl;
+//#modify
+	  edm::LogVerbatim("GEMCSCSegmentBuilder")<<"[GEMCSCSegmentBuilder :: build] Found non-ME1/1 and ME2/1 Segment in "<<CSCId.rawId()<<" = "<<CSCId<<std::endl;
 
 	  // get CSC segment vector associated to this CSCDetId
 	  // if no vector is associated yet to this CSCDetId, create empty vector
@@ -282,7 +376,8 @@ void GEMCSCSegmentBuilder::build(const GEMRecHitCollection* recHits, const CSCSe
       CSCDetId cscId(gemHitIt->first);
       
       // hits    
-      std::vector<const CSCSegment*> cscSegments = cscSegColl_GEM11[cscId.rawId()];
+      //#modify
+      std::vector<const CSCSegment*> cscSegments1 = cscSegColl_GEM11[cscId.rawId()];
       std::vector<const GEMRecHit*>  gemRecHits;
       // dets
       std::map<uint32_t, const CSCLayer* >        cscLayers;
@@ -302,35 +397,101 @@ void GEMCSCSegmentBuilder::build(const GEMRecHitCollection* recHits, const CSCSe
 	  gemRecHits.push_back(*rechit);
 	  gemEtaPartitions[gemid.rawId()] = gemgeom_->etaPartition(gemid.rawId());
 	}
-      
       // LogDebug
+      //#modify 
       edm::LogVerbatim("GEMCSCSegmentBuilder")<<"[GEMCSCSegmentBuilder :: build] ask SegmentAlgo to be run :: CSC DetId "<<cscId.rawId()<<" = "<<cscId
-					      <<" with "<<cscSegments.size()<<" CSC segments and "<<gemRecHits.size()<<" GEM rechits";
-
+					      <<" with "<<cscSegments1.size()<<" CSC segments and "<<gemRecHits.size()<<" GEM rechits";
       // Ask the Segment Algorithm to build a GEMCSC Segment    
-      std::vector<GEMCSCSegment> segmentvector = algo->run(cscLayers, gemEtaPartitions, cscSegments, gemRecHits);
-      
+      //#modify
+      std::vector<GEMCSCSegment> segmentvector1 = algo->run(cscLayers, gemEtaPartitions, cscSegments1, gemRecHits);
+
       // --- LogDebug --------------------------------------------------------
+      //#modify
       edm::LogVerbatim("GEMCSCSegmentBuilder")<<"[GEMCSCSegmentBuilder :: build] SegmentAlgo ran, now trying to add the segments from the returned GEMCSCSegment vector (with size = "
-					      <<segmentvector.size()<<") to the master collection";
-      std::stringstream segmentvectorss; segmentvectorss<<"[GEMCSCSegmentBuilder :: build] :: GEMCSC segmentvector :: elements ["<<std::endl;
-      for(std::vector<GEMCSCSegment>::const_iterator segIt = segmentvector.begin(); segIt != segmentvector.end(); ++segIt)
+					      <<segmentvector1.size()+segmentvector2.size()<<") to the master collection";
+      //#modify
+      std::stringstream segmentvectorss1; segmentvectorss1<<"[GEMCSCSegmentBuilder :: build] :: GEMCSC segmentvector1 :: elements ["<<std::endl;
+      //#modify
+      for(std::vector<GEMCSCSegment>::const_iterator segIt1 = segmentvector1.begin(); segIt1 != segmentvector1.end(); ++segIt1)
         {
-	  segmentvectorss<<"[GEMCSC Segment details: \n"<<*segIt<<"],"<<std::endl;
+	  segmentvectorss1<<"[GEMCSC Segment details: \n"<<*segIt1<<"],"<<std::endl;
         }
-      segmentvectorss<<"]";
-      std::string segmentvectorstr = segmentvectorss.str();
-      edm::LogVerbatim("GEMCSCSegmentBuilder") << segmentvectorstr;
+      segmentvectorss1<<"]";
+      std::string segmentvectorstr1 = segmentvectorss1.str();
+      edm::LogVerbatim("GEMCSCSegmentBuilder") << segmentvectorstr1;
+      
       // --- End LogDebug ----------------------------------------------------
 
 
       // Add the segments to master collection
+      //#modify
       edm::LogVerbatim("GEMCSCSegmentBuilder")<<"[GEMCSCSegmentBuilder :: build] |--> GEMCSC Segments created, now try to add to the collection :: CSC DetId: "<<cscId.rawId()<<" = "<<cscId
-					      <<" added "<<segmentvector.size()<<" GEMCSC Segments";    
-      oc.put(cscId, segmentvector.begin(), segmentvector.end());
+					      <<" added "<<segmentvector1.size()<<" GEMCSC Segments";   
+
+      oc.put(cscId, segmentvector1.begin(), segmentvector1.end());
       edm::LogVerbatim("GEMCSCSegmentBuilder")<<"[GEMCSCSegmentBuilder :: build] |--> GEMCSC Segments added to the collection";    
     }
   
+//#add Case A2 ME2/1 + GE2/1
+  edm::LogVerbatim("GEMCSCSegmentBuilder")<<"[GEMCSCSegmentBuilder :: build] Run over the gemRecHitCollection (size = "<<gemRecHitCollection.size()<<") and build GEMCSC Segments";
+  for(auto gemHitIt=gemRecHitCollection.begin(); gemHitIt != gemRecHitCollection.end(); ++gemHitIt) 
+    {
+      CSCDetId cscId(gemHitIt->first);
+      // hits    
+      //#modify
+      std::vector<const CSCSegment*> cscSegments2 = cscSegColl_GEM21[cscId.rawId()];
+      std::vector<const GEMRecHit*>  gemRecHits;
+      // dets
+      std::map<uint32_t, const CSCLayer* >        cscLayers;
+      std::map<uint32_t, const GEMEtaPartition* > gemEtaPartitions;
+   
+      // fill dets for CSC
+      std::vector<const CSCLayer*> cscLayerVector = cscgeom_->chamber(cscId.rawId())->layers();
+      for(std::vector<const CSCLayer*>::const_iterator layIt = cscLayerVector.begin(); layIt != cscLayerVector.end(); ++layIt) 
+	{
+	  cscLayers[(*layIt)->id()]         = cscgeom_->layer((*layIt)->id());
+	}
+
+      // fill dets & hits for GEM
+      for(auto rechit = gemHitIt->second.begin(); rechit != gemHitIt->second.end(); ++rechit) 
+	{
+	  GEMDetId gemid = (*rechit)->gemId();
+	  gemRecHits.push_back(*rechit);
+	  gemEtaPartitions[gemid.rawId()] = gemgeom_->etaPartition(gemid.rawId());
+	}
+      // LogDebug
+      //#modify 
+      edm::LogVerbatim("GEMCSCSegmentBuilder")<<"[GEMCSCSegmentBuilder :: build] ask SegmentAlgo to be run :: CSC DetId "<<cscId.rawId()<<" = "<<cscId
+					      <<" with "<<cscSegments2.size()<<" CSC segments and "<<gemRecHits.size()<<" GEM rechits";
+      // Ask the Segment Algorithm to build a GEMCSC Segment    
+      //#add
+      std::vector<GEMCSCSegment> segmentvector2 = algo->run(cscLayers, gemEtaPartitions, cscSegments2, gemRecHits);
+      
+      // --- LogDebug --------------------------------------------------------
+      //#modify
+      edm::LogVerbatim("GEMCSCSegmentBuilder")<<"[GEMCSCSegmentBuilder :: build] SegmentAlgo ran, now trying to add the segments from the returned GEMCSCSegment vector (with size = "
+					      <<segmentvector1.size()+segmentvector2.size()<<") to the master collection";
+      
+      //#modify
+      for(std::vector<GEMCSCSegment>::const_iterator segIt2 = segmentvector2.begin(); segIt2 != segmentvector2.end(); ++segIt2)
+        {
+	  segmentvectorss2<<"[GEMCSC Segment details: \n"<<*segIt2<<"],"<<std::endl;
+        }
+      segmentvectorss2<<"]";
+      std::string segmentvectorstr2 = segmentvectorss2.str();
+      edm::LogVerbatim("GEMCSCSegmentBuilder") << segmentvectorstr2;
+
+      // --- End LogDebug ----------------------------------------------------
+
+
+      // Add the segments to master collection
+      //#modify
+      edm::LogVerbatim("GEMCSCSegmentBuilder")<<"[GEMCSCSegmentBuilder :: build] |--> GEMCSC Segments created, now try to add to the collection :: CSC DetId: "<<cscId.rawId()<<" = "<<cscId
+					      <<" added "<<segmentvector2.size()<<" GEMCSC Segments";   
+
+      oc.put(cscId, segmentvector2.begin(), segmentvector2.end());
+      edm::LogVerbatim("GEMCSCSegmentBuilder")<<"[GEMCSCSegmentBuilder :: build] |--> GEMCSC Segments added to the collection";    
+    }
 
   // Case B :: push CSC segments without GEM rechits 
   // associated to them into the GEMCSC Segment Collection

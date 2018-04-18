@@ -74,7 +74,7 @@ class GEMCSCSegmentBuilder {
   ~GEMCSCSegmentBuilder();
 
 //#modified
-  void build(const GEMRecHitCollection* rechits,const CSCSegmentCollection* cscsegments, GEMCSCSegmentCollection& oc1,GEMCSCSegmentCollection& oc2); 
+  void build(const GEMRecHitCollection* rechits,const CSCSegmentCollection* cscsegments, GEMCSCSegmentCollection& oc); 
 
 //#added 
 // void build2(const GEMRecHitCollection* rechits,const CSCSegmentCollection* cscsegments, GEMCSCSegmentCollection& oc2); 
